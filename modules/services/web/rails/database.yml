@@ -1,0 +1,10 @@
+<%= ENV['RAILS_ENV'] %>:
+  adapter: postgresql
+  encoding: unicode
+  pool: 5
+  timeout: 5000
+  host: <%= ENV['DATABASE_HOST'] %>
+  port: <%= ENV['DATABASE_PORT'] %>
+  database: <%= ENV['DATABASE_NAME'] %>
+  username: <%= ENV['DATABASE_USER'] %>
+  password: '<%= File.read(ENV['DATABASE_PASSWORD_FILE']).chomp %>'
