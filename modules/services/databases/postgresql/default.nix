@@ -62,6 +62,21 @@ let
         description = "A list of extension modules to enable for the database.";
       };
 
+      superuser = mkOption {
+        type = types.bool;
+        default = false;
+        example = true;
+        description = ''
+          Allow this user to be a superuser.
+
+          WARNING: You probably don't want to enable this.  However,
+          you may have no choice in some situations.  For
+          example, when running tests in a Ruby on Rails application
+          the test user needs superuser privileges in order to disable
+          referential integrity (yuck).
+        '';
+      };
+
       netmask = mkOption {
         type = types.nullOr types.str;
         default = null;
@@ -98,7 +113,8 @@ let
         -u "${account.user}" \
         -d "${account.database}" \
         -p "${account.passwordFile}" \
-        -e "${concatStringsSep " " account.extensions}"
+        -e "${concatStringsSep " " account.extensions}" \
+        -S "${toString account.superuser}"
     '';
 
 in

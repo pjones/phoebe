@@ -9,6 +9,7 @@ option_password_file=""
 option_database=""
 option_extensions=""
 option_sqlfile="@out@/sql/create-user.sql"
+option_superuser=0
 
 ################################################################################
 usage () {
@@ -20,12 +21,13 @@ Usage: create-user.sh [options]
   -h      This message
   -p FILE File containing USER's password
   -s FILE The SQL template file (pg-create-user.sql)
+  -S      Give USER super powers
   -u USER Username to create
 EOF
 }
 
 ################################################################################
-while getopts "d:e:hp:s:u:" o; do
+while getopts "d:e:hp:s:Su:" o; do
   case "${o}" in
     d) option_database=$OPTARG
        ;;
@@ -41,6 +43,9 @@ while getopts "d:e:hp:s:u:" o; do
        ;;
 
     s) option_sqlfile=$OPTARG
+       ;;
+
+    S) option_superuser=1
        ;;
 
     u) option_username=$OPTARG
@@ -91,8 +96,17 @@ mksql() {
 
 ################################################################################
 create_user() {
+  local superuser
+
+  if [ "$option_superuser" -eq 1 ]; then
+    superuser="SUPERUSER"
+  else
+    superuser="NOSUPERUSER"
+  fi
+
   mksql
   _psql -d postgres -f "$tmp_sql_file" > /dev/null
+  _psql -d postgres -c "ALTER ROLE $option_username $superuser"
 }
 
 ################################################################################
