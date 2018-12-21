@@ -66,7 +66,7 @@ let
         DATABASE_PORT = toString app.database.port;
         DATABASE_NAME = app.database.name;
         DATABASE_USER = app.database.user;
-        DATABASE_PASSWORD_FILE = "${app.home}/config/database.password";
+        DATABASE_PASSWORD_FILE = "${app.home}/state/database.password";
       } // app.environment;
 
       wantedBy = [ "multi-user.target" ];
@@ -78,11 +78,12 @@ let
       preStart = ''
         # Prepare the config directory:
         rm -rf ${app.home}/config
-        mkdir -p ${app.home}/{config,log,tmp,db}
+        mkdir -p ${app.home}/{config,log,tmp,db,state}
+
         cp -rf ${app.package}/share/${app.name}/config.dist/* ${app.home}/config/
         cp ${app.package}/share/${app.name}/db/schema.rb.dist ${app.home}/db/schema.rb
         cp ${./database.yml} ${app.home}/config/database.yml
-        cp ${app.database.passwordFile} ${app.home}/config/database.password
+        cp ${app.database.passwordFile} ${app.home}/state/database.password
 
         mkdir -p ${app.home}/home
         ln -nfs ${app.package}/share/${app.name} ${app.home}/home/${app.name}
@@ -95,7 +96,9 @@ let
       '' + optionalString app.database.migrate ''
         # Migrate the database (use sudo so environment variables go through):
         ${pkgs.sudo}/bin/sudo -u rails-${app.name} -EH \
-          ${scripts}/bin/db-migrate.sh -r ${app.package}/share/${app.name}
+          ${scripts}/bin/db-migrate.sh \
+            -r ${app.package}/share/${app.name} \
+            -s ${app.home}/state
       '';
 
       serviceConfig = {

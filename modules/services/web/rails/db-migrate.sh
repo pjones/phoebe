@@ -9,6 +9,7 @@ set -u
 ################################################################################
 option_env=${RAILS_ENV:-production}
 option_root=$(pwd)
+option_statedir=$(pwd)/state
 
 ################################################################################
 usage () {
@@ -18,11 +19,12 @@ Usage: db-migrate.sh [options]
   -e NAME Set RAILS_ENV to NAME
   -h      This message
   -r DIR  The root directory of the Rails app
+  -s DIR  Directory where state files can be stored
 EOF
 }
 
 ################################################################################
-while getopts "he:r:" o; do
+while getopts "he:r:s:" o; do
   case "${o}" in
     e) option_env=$OPTARG
        ;;
@@ -32,6 +34,9 @@ while getopts "he:r:" o; do
        ;;
 
     r) option_root=$OPTARG
+       ;;
+
+    s) option_statedir=$OPTARG
        ;;
 
     *) exit 1
@@ -47,9 +52,9 @@ export RAILS_ENV=$option_env
 
 ################################################################################
 # If this is a new database, load the schema file:
-if [ ! -e config/database-loaded.flag ]; then
+if [ ! -e "$option_statedir/database-loaded.flag" ]; then
   rake db:schema:load
-  touch config/database-loaded.flag
+  touch "$option_statedir/database-loaded.flag"
 fi
 
 ################################################################################
