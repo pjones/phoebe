@@ -114,21 +114,29 @@ decrypt_file() {
   mkdir -p "$(dirname "$dest_file")"
   echo "==> $dest_file"
 
-  if [ -n "$symmetric_key" ]; then
-    gpg --batch \
-        --quiet \
-        --decrypt \
-        --passphrase-fd 0 \
-        --pinentry-mode loopback \
-        "$file" > "$dest_file" \
-        <<<"$symmetric_key"
-  else
-    gpg --use-agent \
-        --quiet \
-        --decrypt \
-        --quiet \
-        "$file" > "$dest_file"
-  fi
+  case "$file" in
+    *.gpg) # File is encrypted, use gpg:
+      if [ -n "$symmetric_key" ]; then
+        gpg --batch \
+            --quiet \
+            --decrypt \
+            --passphrase-fd 0 \
+            --pinentry-mode loopback \
+            "$file" > "$dest_file" \
+            <<<"$symmetric_key"
+      else
+        gpg --use-agent \
+            --quiet \
+            --decrypt \
+            --quiet \
+            "$file" > "$dest_file"
+      fi
+      ;;
+
+    *) # Just copy the file as-is:
+      cp "$file" "$dest_file"
+      ;;
+  esac
 }
 
 ################################################################################
