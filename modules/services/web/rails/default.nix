@@ -8,6 +8,7 @@ let
   ##############################################################################
   # Save some typing.
   cfg = config.phoebe.services.rails;
+  plib = config.phoebe.lib;
   scripts = import ./scripts.nix { inherit lib pkgs; };
   options = import ./options.nix { inherit config lib pkgs; };
 
@@ -70,10 +71,17 @@ let
       } // app.environment;
 
       wantedBy = [ "multi-user.target" ];
-      wants = optional (app.database.passwordService != null) app.database.passwordService;
-      after = [ "network.target" ] ++
+
+      wants =
+        plib.keyService app.database.passwordFile ++
+        plib.keyService app.sourcedFile;
+
+      after =
+        [ "network.target" ] ++
         optional localpg  "postgresql.service" ++
-        optional (app.database.passwordService != null) app.database.passwordService;
+        optional localpg  "pg-accounts.service" ++
+        plib.keyService app.database.passwordFile ++
+        plib.keyService app.sourcedFile;
 
       preStart = ''
         # Prepare the config directory:
@@ -88,6 +96,11 @@ let
         mkdir -p ${app.home}/home
         ln -nfs ${app.package}/share/${app.name} ${app.home}/home/${app.name}
 
+        # Copy the sourcedFile if necessary:
+        ${optionalString (app.sourcedFile != null) ''
+          cp ${app.sourcedFile} ${app.home}/state/sourcedFile.sh
+        ''}
+
         # Fix permissions:
         chown -R rails-${app.name}:rails-${app.name} ${app.home}
         chmod go+rx $(dirname "${app.home}")
@@ -101,6 +114,11 @@ let
             -s ${app.home}/state
       '';
 
+      script = ''
+        ${optionalString (app.sourcedFile != null) ". ${app.home}/state/sourcedFile.sh"}
+        ${app.package.rubyEnv}/bin/puma -e ${app.railsEnv} -p ${toString app.port}
+      '';
+
       serviceConfig = {
         WorkingDirectory = "${app.package}/share/${app.name}";
         Restart = "on-failure";
@@ -110,7 +128,6 @@ let
         User = "rails-${app.name}";
         Group = "rails-${app.name}";
         UMask = "0077";
-        ExecStart = "${app.package.rubyEnv}/bin/puma -e ${app.railsEnv} -p ${toString app.port}";
       };
     };
   };

@@ -6,9 +6,10 @@ with lib;
 
 let
   cfg = config.phoebe.services.postgresql;
+  plib = config.phoebe.lib;
   superuser = config.services.postgresql.superUser;
   create-user = import ./create-user.nix { inherit config lib pkgs; };
-  afterservices = concatMap (a: a.afterServices) (attrValues cfg.accounts);
+  afterservices = concatMap (a: plib.keyService a.passwordFile) (attrValues cfg.accounts);
 
   # Per-account options:
   account = { name, ... }: {
@@ -30,18 +31,10 @@ let
           A file containing the password of this database user.
           You'll want to use something like NixOps to get the password
           file onto the target machine.
-        '';
-      };
 
-      afterServices = mkOption {
-        type = types.listOf types.str;
-        default = [ ];
-        example = [ "dbpassword.service" ];
-        description = ''
-          A list of services that need to run before this user account
-          can be created.  This is really useful if you are using
-          NixOps to deploy the password file and want to wait for the
-          key to appear in /run/keys.
+          If the file looks like it's a NixOps key then the account
+          creation script will automatically wait for the appropriate
+          key service to start.
         '';
       };
 

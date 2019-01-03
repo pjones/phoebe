@@ -31,18 +31,6 @@ let
         '';
       };
 
-      passwordService = mkOption {
-        type = types.nullOr types.str;
-        default = null;
-        example = "db-password.service";
-        description = ''
-          A service to wait on before starting the Rails application.
-          This service should provide the password file for the
-          passwordFile option.  Useful when deploying passwords with
-          NixOps.
-        '';
-      };
-
       migrate = mkOption {
         type = types.bool;
         default = true;
@@ -111,6 +99,23 @@ let
         type = types.attrs;
         default = { };
         description = "Environment variables.";
+      };
+
+      sourcedFile = mkOption {
+        type = types.nullOr types.path;
+        default = null;
+        example = "/run/keys/env.sh";
+        description = ''
+          Bash file to source immediately before running any service
+          command.
+
+          If the file is store under /run/keys the service will wait
+          for the file to become available.
+
+          This option can be used to set environment variables more
+          securely than using the environment option.  However, you
+          should really use the Rails secrets system.
+        '';
       };
     };
 
