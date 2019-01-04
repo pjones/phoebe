@@ -1,5 +1,5 @@
 # Functions for working with NixOps keys.
-{ lib }:
+{ lib, ... }:
 
 with lib;
 

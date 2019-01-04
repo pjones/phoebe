@@ -5,9 +5,10 @@ with lib;
 let
   libFiles = [
     ../lib/keys.nix
+    ../lib/shell.nix
   ];
 
-  loadLib = path: import path { inherit lib; };
+  loadLib = path: import path { inherit lib pkgs; };
   libs = foldr (a: b: recursiveUpdate (loadLib a) b) {} libFiles;
 
 in

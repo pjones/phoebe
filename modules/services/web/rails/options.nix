@@ -53,6 +53,35 @@ let
   };
 
   ##############################################################################
+  # Service configuration:
+  service = { name, ... }: {
+    options = {
+      name = mkOption {
+        type = types.str;
+        example = "sidekiq";
+        description = "The name of the additional service to run.";
+      };
+
+      script = mkOption {
+        type = types.lines;
+        example = "sidekiq -c 5 -v -q default";
+        description = "Shell commands executed as the service's main process.";
+      };
+
+      isMain = mkOption {
+        internal = true;
+        type = types.bool;
+        default = false;
+        description = "Is this the main Rails process?";
+      };
+    };
+
+    config = {
+      name = mkDefault name;
+    };
+  };
+
+  ##############################################################################
   # Application configuration:
   application = { name, ... }: {
     options = {
@@ -86,6 +115,20 @@ let
       database = mkOption {
         type = types.submodule database;
         description = "Database configuration.";
+      };
+
+      services = mkOption {
+        type = types.attrsOf (types.submodule service);
+        default = { };
+        description = ''
+          Additional services to run for this Rails application.  For
+          example, if you need to have background queue processing
+          scripts running this is where you'd want to do that.
+
+          All of the listed services are run via systemd and are
+          executed in the same environment as the main Rails
+          application itself.
+        '';
       };
 
       railsEnv = mkOption {

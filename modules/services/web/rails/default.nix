@@ -13,6 +13,17 @@ let
   options = import ./options.nix { inherit config lib pkgs; };
 
   ##############################################################################
+  # The main Rails service:
+  mainService = app: {
+    name = "main";
+    isMain = true;
+
+    script = ''
+      puma -e ${app.railsEnv} -p ${toString app.port}
+    '';
+  };
+
+  ##############################################################################
   # Is PostgreSQL local?
   localpg = config.phoebe.services.postgresql.enable;
 
@@ -20,6 +31,18 @@ let
   # Packages to put in the application's PATH.  FIXME:
   # propagatedBuildInputs won't always be set.
   appPath = app: [ app.package.rubyEnv ] ++ app.package.propagatedBuildInputs;
+
+  ##############################################################################
+  # All of the environment variables that a Rails app needs:
+  appEnv = app: {
+    HOME = "${app.home}/home";
+    RAILS_ENV = app.railsEnv;
+    DATABASE_HOST = app.database.host;
+    DATABASE_PORT = toString app.database.port;
+    DATABASE_NAME = app.database.name;
+    DATABASE_USER = app.database.user;
+    DATABASE_PASSWORD_FILE = "${app.home}/state/database.password";
+  } // app.environment;
 
   ##############################################################################
   # Collect all apps into a single set using the given function:
@@ -55,24 +78,15 @@ let
 
   ##############################################################################
   # Generate a systemd service for a Ruby on Rails application:
-  appService = app: {
-    "rails-${app.name}" = {
-      description = "${app.name} (Ruby on Rails)";
+  appService = app: service: {
+    "rails-${app.name}-${service.name}" = {
+      description = "${app.name} (Ruby on Rails) ${service.name}";
       path = appPath app;
-
-      environment = {
-        HOME = "${app.home}/home";
-        RAILS_ENV = app.railsEnv;
-        DATABASE_HOST = app.database.host;
-        DATABASE_PORT = toString app.database.port;
-        DATABASE_NAME = app.database.name;
-        DATABASE_USER = app.database.user;
-        DATABASE_PASSWORD_FILE = "${app.home}/state/database.password";
-      } // app.environment;
-
+      environment = appEnv app;
       wantedBy = [ "multi-user.target" ];
 
       wants =
+        optional (!service.isMain) "rails-${app.name}-main" ++
         plib.keyService app.database.passwordFile ++
         plib.keyService app.sourcedFile;
 
@@ -80,10 +94,11 @@ let
         [ "network.target" ] ++
         optional localpg  "postgresql.service" ++
         optional localpg  "pg-accounts.service" ++
+        optional (!service.isMain) "rails-${app.name}-main" ++
         plib.keyService app.database.passwordFile ++
         plib.keyService app.sourcedFile;
 
-      preStart = ''
+      preStart = optionalString service.isMain ''
         # Prepare the config directory:
         rm -rf ${app.home}/config
         mkdir -p ${app.home}/{config,log,tmp,db,state}
@@ -93,8 +108,12 @@ let
         cp ${./database.yml} ${app.home}/config/database.yml
         cp ${app.database.passwordFile} ${app.home}/state/database.password
 
+        # Additional set up for the home directory:
         mkdir -p ${app.home}/home
         ln -nfs ${app.package}/share/${app.name} ${app.home}/home/${app.name}
+        ln -nfs ${plib.attrsToShellExports "rails-${app.name}-env" (appEnv app)} ${app.home}/home/.env
+        cp ${./profile.sh} ${app.home}/home/.profile
+        chmod 0700 ${app.home}/home/.profile
 
         # Copy the sourcedFile if necessary:
         ${optionalString (app.sourcedFile != null) ''
@@ -106,9 +125,9 @@ let
         chmod go+rx $(dirname "${app.home}")
         chmod u+w ${app.home}/db/schema.rb
 
-      '' + optionalString app.database.migrate ''
-        # Migrate the database (use sudo so environment variables go through):
-        ${pkgs.sudo}/bin/sudo -u rails-${app.name} -EH \
+      '' + optionalString (service.isMain && app.database.migrate) ''
+        # Migrate the database:
+        ${pkgs.sudo}/bin/sudo --user=rails-${app.name} --login \
           ${scripts}/bin/db-migrate.sh \
             -r ${app.package}/share/${app.name} \
             -s ${app.home}/state
@@ -116,7 +135,7 @@ let
 
       script = ''
         ${optionalString (app.sourcedFile != null) ". ${app.home}/state/sourcedFile.sh"}
-        ${app.package.rubyEnv}/bin/puma -e ${app.railsEnv} -p ${toString app.port}
+        ${service.script}
       '';
 
       serviceConfig = {
@@ -131,6 +150,13 @@ let
       };
     };
   };
+
+  ##############################################################################
+  # Collect all services for a given application and turn them into
+  # systemd services.
+  appServices = app:
+    foldr (service: set: recursiveUpdate set (appService app service)) {}
+          ( [(mainService app)] ++ attrValues app.services );
 
   ##############################################################################
   # Generate a user account for a Ruby on Rails application:
@@ -173,7 +199,8 @@ in
     # Each application gets a user account:
     users = collectApps appUser;
 
-    # Each application gets a systemd service to keep it running.
-    systemd.services = collectApps appService;
+    # Each application gets one or more systemd services to keep it
+    # running.
+    systemd.services = collectApps appServices;
   };
 }
