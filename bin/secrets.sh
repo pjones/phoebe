@@ -64,12 +64,13 @@ calculate_mount_point() {
 }
 
 ################################################################################
+# Figure out how much space we need in the tmpfs.
 calculate_fs_size() {
   local directory=$1
   local size
 
-  size=$(du --bytes --summarize "$directory" | awk '{print $1}')
-  echo $((size * 2))
+  size=$(tar -cf - "$directory" | wc -c)
+  echo $((size * 10 / 1024))k
 }
 
 ################################################################################
@@ -191,7 +192,7 @@ mount_secrets() {
 
   while IFS= read -r -d '' file; do
     decrypt_file "$file" "$option_secrets" "$option_mount_point" "$symmetric_key"
-  done < <(find "$option_secrets" -type f -print0)
+  done < <(find "$option_secrets"/ -type f -print0)
 }
 
 ################################################################################
