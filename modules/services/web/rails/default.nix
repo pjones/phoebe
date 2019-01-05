@@ -77,6 +77,21 @@ let
   };
 
   ##############################################################################
+  # Log rotation:
+  appLogRotation = app:
+    ''
+      ${app.home}/log/*.log {
+        size 64M
+        rotate 16
+        missingok
+        compress
+        delaycompress
+        notifempty
+        copytruncate
+      }
+    '';
+
+  ##############################################################################
   # Generate a systemd service for a Ruby on Rails application:
   appService = app: service: {
     "rails-${app.name}-${service.name}" = {
@@ -202,5 +217,11 @@ in
     # Each application gets one or more systemd services to keep it
     # running.
     systemd.services = collectApps appServices;
+
+    # Rotate all of the log files:
+    services.logrotate = {
+      enable = true;
+      config = concatMapStringsSep "\n" appLogRotation (attrValues cfg.apps);
+    };
   };
 }
