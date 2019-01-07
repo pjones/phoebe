@@ -68,6 +68,18 @@ let
         description = "Shell commands executed as the service's main process.";
       };
 
+      schedule = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        example = "*-*-* *:00/5:00";
+        description = ''
+          If null (the default), run this service in the background
+          continuously, restarting it if it stops.  However, if this
+          option is set, it should be a systemd calendar string and
+          this service will run on a scheduled timer instead.
+        '';
+      };
+
       isMain = mkOption {
         internal = true;
         type = types.bool;

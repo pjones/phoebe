@@ -16,6 +16,7 @@ let
   # The main Rails service:
   mainService = app: {
     name = "main";
+    schedule = null;
     isMain = true;
 
     script = ''
@@ -98,10 +99,11 @@ let
       description = "${app.name} (Ruby on Rails) ${service.name}";
       path = appPath app;
       environment = appEnv app;
-      wantedBy = [ "multi-user.target" ];
+
+      # Only start this service if it isn't scheduled by a timer.
+      wantedBy = optional (service.schedule == null) "multi-user.target";
 
       wants =
-        optional (!service.isMain) "rails-${app.name}-main" ++
         plib.keyService app.database.passwordFile ++
         plib.keyService app.sourcedFile;
 
@@ -167,11 +169,28 @@ let
   };
 
   ##############################################################################
+  # Schedule some services with a systemd timer:
+  appTimer = app: service: optionalAttrs (service.schedule != null) {
+    "rails-${app.name}-${service.name}" = {
+      description = "${app.name} (Ruby on Rails) ${service.name}";
+      wantedBy = [ "timers.target" ];
+      timerConfig.OnCalendar = service.schedule;
+      timerConfig.Unit = "rails-${app.name}-${service.name}.service";
+    };
+  };
+
+  ##############################################################################
   # Collect all services for a given application and turn them into
   # systemd services.
   appServices = app:
     foldr (service: set: recursiveUpdate set (appService app service)) {}
           ( [(mainService app)] ++ attrValues app.services );
+
+  ##############################################################################
+  # Collect all services and turn them into systemd timers:
+  appTimers = app:
+    foldr (service: set: recursiveUpdate set (appTimer app service)) {}
+          (attrValues app.services);
 
   ##############################################################################
   # Generate a user account for a Ruby on Rails application:
@@ -217,6 +236,7 @@ in
     # Each application gets one or more systemd services to keep it
     # running.
     systemd.services = collectApps appServices;
+    systemd.timers   = collectApps appTimers;
 
     # Rotate all of the log files:
     services.logrotate = {
