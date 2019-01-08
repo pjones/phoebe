@@ -67,11 +67,11 @@ let
         };
 
         "/" = {
-          tryFiles = "$uri @app";
+          tryFiles = "$uri @rails-${app.name}";
         };
 
-        "@app" = {
-          proxyPass = "http://localhost:${toString app.port}";
+        "@rails-${app.name}" = {
+          proxyPass = "http://127.0.0.1:${toString app.port}";
         };
       };
     };
