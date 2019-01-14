@@ -6,7 +6,7 @@
 #
 # Based on (read this so you know what's going on):
 #
-#   https://gist.github.com/nocoolnametom/a359624afce4278f16e2760fe65468ccd
+#   https://gist.github.com/nocoolnametom/a359624afce4278f16e2760fe65468cc
 #
 # Prerequisites:
 #
@@ -55,6 +55,12 @@
 #   7. Create the final configuration for your new server and boot
 #      into NixOS (more details can be found in the guide referenced
 #      above).
+#
+#      Essentially:
+#        - Kernel: GRUB 2
+#        - /dev/sda -> NixOS
+#        - /dev/sdb -> Swap
+#        - Helpers: All off
 
 ################################################################################
 set -e
@@ -149,6 +155,17 @@ else
   hardware_uuid_to_label swap
   update_grub_settings
   enable_ssh
-  nixos-install
-  shutdown now
+  nixos-install --no-root-passwd
+
+  set +x
+  echo "*****************************"
+  echo "* WARNING: NO ROOT PASSWORD *"
+  echo "*****************************"
+  echo
+  echo "Set one with: passwd -R /mnt"
+  echo "      Then run: halt"
+  echo
+  echo "*****************************"
+  echo "* WARNING: NO ROOT PASSWORD *"
+  echo "*****************************"
 fi
