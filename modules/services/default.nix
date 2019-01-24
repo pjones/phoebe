@@ -3,6 +3,7 @@
 {
   imports = [
     ./databases
+    ./monitoring
     ./web
   ];
 }
