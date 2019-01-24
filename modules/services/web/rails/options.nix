@@ -4,7 +4,7 @@ with lib;
 
 let
   ##############################################################################
-  functions = import ./functions.nix;
+  functions = import ./functions.nix { inherit config; };
 
   ##############################################################################
   # Database configuration:
@@ -100,6 +100,20 @@ let
       name = mkOption {
         type = types.str;
         description = "The name of the Ruby on Rails application.";
+      };
+
+      enable = mkOption {
+        type = types.bool;
+        default = true;
+        example = false;
+        description = ''
+          Whether to enable this application by default.
+
+          Setting this value to false will prevent any of the systemd
+          services from starting.  This is useful for creating
+          development environments where everything is set up but
+          nothing is running.
+        '';
       };
 
       home = mkOption {

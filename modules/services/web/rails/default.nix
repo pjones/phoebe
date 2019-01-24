@@ -8,42 +8,11 @@ let
   ##############################################################################
   # Save some typing.
   cfg = config.phoebe.services.rails;
-  plib = config.phoebe.lib;
-  scripts = import ./scripts.nix { inherit lib pkgs; };
-  options = import ./options.nix { inherit config lib pkgs; };
 
   ##############################################################################
-  # The main Rails service:
-  mainService = app: {
-    name = "main";
-    schedule = null;
-    isMain = true;
-
-    script = ''
-      puma -e ${app.railsEnv} -p ${toString app.port}
-    '';
-  };
-
-  ##############################################################################
-  # Is PostgreSQL local?
-  localpg = config.phoebe.services.postgresql.enable;
-
-  ##############################################################################
-  # Packages to put in the application's PATH.  FIXME:
-  # propagatedBuildInputs won't always be set.
-  appPath = app: [ app.package.rubyEnv ] ++ app.package.propagatedBuildInputs;
-
-  ##############################################################################
-  # All of the environment variables that a Rails app needs:
-  appEnv = app: {
-    HOME = "${app.home}/home";
-    RAILS_ENV = app.railsEnv;
-    DATABASE_HOST = app.database.host;
-    DATABASE_PORT = toString app.database.port;
-    DATABASE_NAME = app.database.name;
-    DATABASE_USER = app.database.user;
-    DATABASE_PASSWORD_FILE = "${app.home}/state/database.password";
-  } // app.environment;
+  options    = import ./options.nix { inherit config lib pkgs; };
+  appSystemd = import ./systemd.nix { inherit config pkgs lib; };
+  funcs      = import ./functions.nix { inherit config; };
 
   ##############################################################################
   # Collect all apps into a single set using the given function:
@@ -93,106 +62,6 @@ let
     '';
 
   ##############################################################################
-  # Generate a systemd service for a Ruby on Rails application:
-  appService = app: service: {
-    "rails-${app.name}-${service.name}" = {
-      description = "${app.name} (Ruby on Rails) ${service.name}";
-      path = appPath app;
-      environment = appEnv app;
-
-      # Only start this service if it isn't scheduled by a timer.
-      wantedBy = optional (service.schedule == null) "multi-user.target";
-
-      wants =
-        plib.keyService app.database.passwordFile ++
-        plib.keyService app.sourcedFile;
-
-      after =
-        [ "network.target" ] ++
-        optional localpg  "postgresql.service" ++
-        optional localpg  "pg-accounts.service" ++
-        optional (!service.isMain) "rails-${app.name}-main" ++
-        plib.keyService app.database.passwordFile ++
-        plib.keyService app.sourcedFile;
-
-      preStart = optionalString service.isMain ''
-        # Prepare the config directory:
-        rm -rf ${app.home}/config
-        mkdir -p ${app.home}/{config,log,tmp,db,state}
-
-        cp -rf ${app.package}/share/${app.name}/config.dist/* ${app.home}/config/
-        cp ${app.package}/share/${app.name}/db/schema.rb.dist ${app.home}/db/schema.rb
-        cp ${./database.yml} ${app.home}/config/database.yml
-        cp ${app.database.passwordFile} ${app.home}/state/database.password
-
-        # Additional set up for the home directory:
-        mkdir -p ${app.home}/home
-        ln -nfs ${app.package}/share/${app.name} ${app.home}/home/${app.name}
-        ln -nfs ${plib.attrsToShellExports "rails-${app.name}-env" (appEnv app)} ${app.home}/home/.env
-        cp ${./profile.sh} ${app.home}/home/.profile
-        chmod 0700 ${app.home}/home/.profile
-
-        # Copy the sourcedFile if necessary:
-        ${optionalString (app.sourcedFile != null) ''
-          cp ${app.sourcedFile} ${app.home}/state/sourcedFile.sh
-        ''}
-
-        # Fix permissions:
-        chown -R rails-${app.name}:rails-${app.name} ${app.home}
-        chmod go+rx $(dirname "${app.home}")
-        chmod u+w ${app.home}/db/schema.rb
-
-      '' + optionalString (service.isMain && app.database.migrate) ''
-        # Migrate the database:
-        ${pkgs.sudo}/bin/sudo --user=rails-${app.name} --login \
-          ${scripts}/bin/db-migrate.sh \
-            -r ${app.package}/share/${app.name} \
-            -s ${app.home}/state
-      '';
-
-      script = ''
-        ${optionalString (app.sourcedFile != null) ". ${app.home}/state/sourcedFile.sh"}
-        ${service.script}
-      '';
-
-      serviceConfig = {
-        WorkingDirectory = "${app.package}/share/${app.name}";
-        Restart = "on-failure";
-        TimeoutSec = "infinity"; # FIXME: what's a reasonable amount of time?
-        Type = "simple";
-        PermissionsStartOnly = true;
-        User = "rails-${app.name}";
-        Group = "rails-${app.name}";
-        UMask = "0077";
-      };
-    };
-  };
-
-  ##############################################################################
-  # Schedule some services with a systemd timer:
-  appTimer = app: service: optionalAttrs (service.schedule != null) {
-    "rails-${app.name}-${service.name}" = {
-      description = "${app.name} (Ruby on Rails) ${service.name}";
-      wantedBy = [ "timers.target" ];
-      timerConfig.OnCalendar = service.schedule;
-      timerConfig.Unit = "rails-${app.name}-${service.name}.service";
-    };
-  };
-
-  ##############################################################################
-  # Collect all services for a given application and turn them into
-  # systemd services.
-  appServices = app:
-    foldr (service: set: recursiveUpdate set (appService app service)) {}
-          ( [(mainService app)] ++ attrValues app.services );
-
-  ##############################################################################
-  # Collect all services and turn them into systemd timers:
-  appTimers = app:
-    foldr (service: set: recursiveUpdate set (appTimer app service)) {}
-          (attrValues app.services);
-
-  ##############################################################################
   # Generate a user account for a Ruby on Rails application:
   appUser = app: {
     users."rails-${app.name}" = {
@@ -202,7 +71,7 @@ let
       group = "rails-${app.name}";
       shell = "${pkgs.bash}/bin/bash";
       extraGroups = [ config.services.nginx.group ];
-      packages = appPath app;
+      packages = funcs.appPath app;
     };
     groups."rails-${app.name}" = {};
   };
@@ -234,9 +103,8 @@ in
     users = collectApps appUser;
 
     # Each application gets one or more systemd services to keep it
-    # running.
-    systemd.services = collectApps appServices;
-    systemd.timers   = collectApps appTimers;
+    # running.  There's also a systemd target and some timers.
+    systemd = collectApps appSystemd;
 
     # Rotate all of the log files:
     services.logrotate = {
