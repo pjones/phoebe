@@ -4,6 +4,7 @@
   imports = [
     ./builder
     ./databases
+    ./monitoring
     ./web
   ];
 }
