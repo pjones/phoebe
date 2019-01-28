@@ -61,7 +61,7 @@ let
 
         # Additional set up for the home directory:
         mkdir -p ${app.home}/home
-        ln -nfs ${app.package}/share/${app.name} ${app.home}/home/${app.name}
+        ln -nfs ${app.package}/share/${app.name} ${app.home}/home/app
         ln -nfs ${plib.attrsToShellExports "rails-${app.name}-env" (funcs.appEnv app)} ${app.home}/home/.env
         cp ${./profile.sh} ${app.home}/home/.profile
         chmod 0700 ${app.home}/home/.profile
@@ -79,7 +79,7 @@ let
       '' + optionalString (service.isMain && app.database.migrate) ''
         # Migrate the database:
         ${pkgs.sudo}/bin/sudo --user=rails-${app.name} --login \
-          ${scripts}/bin/db-migrate.sh \
+          ${scripts.user}/bin/db-migrate.sh \
             -r ${app.package}/share/${app.name} \
             -s ${app.home}/state
       '';

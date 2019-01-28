@@ -13,6 +13,7 @@ let
   options    = import ./options.nix { inherit config lib pkgs; };
   appSystemd = import ./systemd.nix { inherit config pkgs lib; };
   funcs      = import ./functions.nix { inherit config; };
+  scripts    = import ./scripts.nix { inherit lib pkgs; };
 
   ##############################################################################
   # Collect all apps into a single set using the given function:
@@ -111,5 +112,10 @@ in
       enable = true;
       config = concatMapStringsSep "\n" appLogRotation (attrValues cfg.apps);
     };
+
+    # Additional packages to install in the environment:
+    environment.systemPackages = [
+      scripts.system
+    ];
   };
 }
