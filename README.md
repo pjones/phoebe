@@ -9,6 +9,13 @@ Module List
 
      Automatically enable various security related settings for NixOS.
 
+  * `phoebe.services.nginx`:
+
+     Extra configuration for nginx (if it's enabled elsewhere).  For
+     example, automatically use syslog so no log files need to be
+     rotated.  See the `phoebe.services.nginx.syslog` option for more
+     details.
+
   * `phoebe.services.postgresql`:
 
     Start and manage PostgreSQL, including automatic user and database

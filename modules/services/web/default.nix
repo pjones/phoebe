@@ -2,6 +2,7 @@
 
 {
   imports = [
+    ./nginx
     ./rails
   ];
 }
