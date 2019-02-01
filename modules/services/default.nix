@@ -2,6 +2,7 @@
 
 {
   imports = [
+    ./builder
     ./databases
     ./web
   ];
