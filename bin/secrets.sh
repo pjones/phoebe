@@ -141,6 +141,51 @@ decrypt_file() {
 }
 
 ################################################################################
+mount_via_dev_shm() {
+  local mount_point=$1
+  local temp_dir
+
+  temp_dir=$(mktemp --directory --tmpdir=/dev/shm secrets.XXXXXXXXXX)
+  (cd "$(dirname "$mount_point")" && ln -nfs "$temp_dir" "$(basename "$mount_point")")
+}
+
+################################################################################
+umount_via_dev_shm() {
+  local mount_point=$1
+  local temp_dir
+
+  temp_dir=$(realpath "$mount_point")
+
+  if [ -d "$temp_dir" ] && [ "$(dirname "$temp_dir")" = "/dev/shm" ]; then
+    rm "$mount_point"
+    rm -rf "$temp_dir"
+  fi
+}
+
+################################################################################
+mount_via_tmpfs() {
+  local mount_point=$1
+  local secrets=$2
+
+  if ! findmnt "$mount_point" > /dev/null 2>&1; then
+    mkdir -p "$mount_point"
+    echo "==> Enter sudo password to mount tmpfs"
+    sudo mount -t tmpfs \
+         -o size="$(calculate_fs_size "$secrets")" \
+         tmpfs "$mount_point"
+  fi
+}
+
+################################################################################
+umount_via_tmpfs() {
+  local mount_point=$1
+
+  echo "==> Enter sudo password for unmounting"
+  sudo umount "$mount_point"
+  rmdir "$mount_point"
+}
+
+################################################################################
 mount_secrets() {
   local option_secrets=""
   local option_mount_point=""
@@ -182,12 +227,10 @@ mount_secrets() {
     symmetric_key=$(read_symmetric_key_file "$option_symmetric_key_file")
   fi
 
-  if ! findmnt "$option_mount_point" > /dev/null 2>&1; then
-    mkdir -p "$option_mount_point"
-    echo "==> Enter sudo password to mount tmpfs"
-    sudo mount -t tmpfs \
-         -o size="$(calculate_fs_size "$option_secrets")" \
-         tmpfs "$option_mount_point"
+  if [ ! -L "$option_mount_point" ] && [ -d /dev/shm ]; then
+    mount_via_dev_shm "$option_mount_point"
+  else
+    mount_via_tmpfs "$option_mount_point" "$option_secrets"
   fi
 
   while IFS= read -r -d '' file; do
@@ -226,9 +269,11 @@ unmount_secrets() {
     exit 1
   fi
 
-  echo "==> Enter sudo password for unmounting"
-  sudo umount "$option_mount_point"
-  rmdir "$option_mount_point"
+  if [ -L "$option_mount_point" ]; then
+    umount_via_dev_shm "$option_mount_point"
+  else
+    umount_via_tmpfs "$option_mount_point"
+  fi
 }
 
 ################################################################################
