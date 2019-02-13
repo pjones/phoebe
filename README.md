@@ -27,6 +27,10 @@ Module List
     helper function to help package Rails applications so they can be
     used by this service.
 
+  * `phoebe.services.web.tunnels`:
+
+     HTTPS to HTTP private tunnels for web developers.
+
 
 [nixos]: https://nixos.org/
 [nixpkgs]: https://nixos.org/nixpkgs/

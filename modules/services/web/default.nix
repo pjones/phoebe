@@ -4,5 +4,6 @@
   imports = [
     ./nginx
     ./rails
+    ./tunnels
   ];
 }
