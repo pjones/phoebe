@@ -21,6 +21,10 @@ Module List
     Start and manage PostgreSQL, including automatic user and database
     creation.
 
+  * `phoebe.services.influxdb`:
+
+     Start and manage InfluxDB, including users and databases.
+
   * `phoebe.services.rails`:
 
     Configure and manage Ruby on Rails applications.  Includes a
