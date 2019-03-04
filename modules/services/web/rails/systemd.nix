@@ -39,7 +39,8 @@ let
 
       wants =
         plib.keyService app.database.passwordFile ++
-        plib.keyService app.sourcedFile;
+        plib.keyService app.sourcedFile ++
+        app.afterServices;
 
       after =
         [ "network.target" ] ++
@@ -47,7 +48,8 @@ let
         optional funcs.localpg  "pg-accounts.service" ++
         optional (!service.isMain) "rails-${app.name}-main" ++
         plib.keyService app.database.passwordFile ++
-        plib.keyService app.sourcedFile;
+        plib.keyService app.sourcedFile ++
+        app.afterServices;
 
       preStart = optionalString service.isMain ''
         # Prepare the config directory:

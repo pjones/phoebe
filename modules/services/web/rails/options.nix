@@ -186,6 +186,13 @@ let
           should really use the Rails secrets system.
         '';
       };
+
+      afterServices = mkOption {
+        type = types.listOf types.str;
+        default = [ ];
+        example = [ "foo-key.service" ];
+        description = "Additional services to start before Rails.";
+      };
     };
 
     config = {
