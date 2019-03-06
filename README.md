@@ -35,6 +35,10 @@ Module List
 
      HTTPS to HTTP private tunnels for web developers.
 
+  * `phoebe.backup.postgresql`:
+
+     Simple backups for PostgreSQL via `pg_dump`.
+
 
 [nixos]: https://nixos.org/
 [nixpkgs]: https://nixos.org/nixpkgs/

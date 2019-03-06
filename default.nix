@@ -15,7 +15,7 @@ pkgs.stdenvNoCC.mkDerivation rec {
 
   installPhase = ''
     mkdir -p $out
-    cp -rp bin modules lib $out/
+    cp -rp bin modules lib pkgs $out/
     chmod 0555 $out/bin/*
   '';
 }

@@ -14,6 +14,7 @@ let
 in
 {
   imports = [
+    ./backup
     ./security
     ./services
   ];
