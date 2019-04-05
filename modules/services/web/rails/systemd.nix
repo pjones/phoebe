@@ -79,7 +79,7 @@ let
 
         # Fix permissions:
         chown -R rails-${app.name}:rails-${app.name} ${app.home}
-        chmod go+rx $(dirname "${app.home}")
+        chmod go+rx $(dirname "${app.home}") "${app.home}"
         chmod u+w ${app.home}/db/schema.rb
 
       '' + optionalString (service.isMain && app.database.migrate) ''
