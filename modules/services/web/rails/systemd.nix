@@ -52,18 +52,22 @@ let
         app.afterServices;
 
       preStart = optionalString service.isMain ''
+        # Link the package into the application's home directory:
+        if [ ! -e "${funcs.appLink app}" ] || [ "${toString app.deployedExternally}" -ne 1 ]; then
+          ln -nfs "${app.package}" "${funcs.appLink app}"
+        fi
+
         # Prepare the config directory:
         rm -rf ${app.home}/config
         mkdir -p ${app.home}/{config,log,tmp,db,state}
-
-        cp -rf ${app.package}/share/${app.name}/config.dist/* ${app.home}/config/
-        cp ${app.package}/share/${app.name}/db/schema.rb.dist ${app.home}/db/schema.rb
+        cp -rf ${funcs.appLink app}/share/${app.name}/config.dist/* ${app.home}/config/
+        cp ${funcs.appLink app}/share/${app.name}/db/schema.rb.dist ${app.home}/db/schema.rb
         cp ${./database.yml} ${app.home}/config/database.yml
         cp ${app.database.passwordFile} ${app.home}/state/database.password
 
         # Additional set up for the home directory:
         mkdir -p ${app.home}/home
-        ln -nfs ${app.package}/share/${app.name} ${app.home}/home/app
+        ln -nfs ${funcs.appLink app}/share/${app.name} ${app.home}/home/app
         ln -nfs ${plib.attrsToShellExports "rails-${app.name}-env" (funcs.appEnv app)} ${app.home}/home/.env
         cp ${./profile.sh} ${app.home}/home/.profile
         chmod 0700 ${app.home}/home/.profile
@@ -82,7 +86,7 @@ let
         # Migrate the database:
         ${pkgs.sudo}/bin/sudo --user=rails-${app.name} --login \
           ${scripts.user}/bin/db-migrate.sh \
-            -r ${app.package}/share/${app.name} \
+            -r ${funcs.appLink app}/share/${app.name} \
             -s ${app.home}/state
       '';
 
@@ -92,7 +96,7 @@ let
       '';
 
       serviceConfig = {
-        WorkingDirectory = "${app.package}/share/${app.name}";
+        WorkingDirectory = "-${funcs.appLink app}/share/${app.name}";
         Restart = "on-failure";
         TimeoutSec = "infinity"; # FIXME: what's a reasonable amount of time?
         Type = "simple";

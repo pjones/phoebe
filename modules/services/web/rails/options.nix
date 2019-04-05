@@ -116,6 +116,21 @@ let
         '';
       };
 
+      deployedExternally = mkOption {
+        type = types.bool;
+        default = false;
+        example = true;
+        description = ''
+          When true, system activation will not override the app link
+          in the home directory.  However, it will be created if missing.
+
+          This is useful if you want to deploy your Rails application
+          using some external tool.  In the Phoebe scripts directory
+          there is an example script for deploying with
+          nix-copy-closure.
+        '';
+      };
+
       home = mkOption {
         type = types.path;
         description = "The directory where the application is deployed to.";

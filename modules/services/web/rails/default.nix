@@ -25,7 +25,7 @@ let
     "${app.domain}" = {
       forceSSL = config.phoebe.security.enable;
       enableACME = config.phoebe.security.enable;
-      root = "${app.package}/share/${app.name}/public";
+      root = "${funcs.appLink app}/share/${app.name}/public";
 
       locations = {
         "/assets/" = {

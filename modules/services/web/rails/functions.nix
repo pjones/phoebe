@@ -11,6 +11,10 @@ rec {
   home = name: "${base}/${name}";
 
   ##############################################################################
+  # Path to where the app is actually installed:
+  appLink = app: "${app.home}/package";
+
+  ##############################################################################
   # Is PostgreSQL local?
   localpg = config.phoebe.services.postgresql.enable;
 
