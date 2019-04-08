@@ -12,7 +12,7 @@ let
   ##############################################################################
   options    = import ./options.nix { inherit config lib pkgs; };
   appSystemd = import ./systemd.nix { inherit config pkgs lib; };
-  funcs      = import ./functions.nix { inherit config; };
+  funcs      = import ./functions.nix;
   scripts    = import ./scripts.nix { inherit lib pkgs; };
 
   ##############################################################################

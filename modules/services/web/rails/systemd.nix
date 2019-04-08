@@ -10,8 +10,12 @@ let
   ##############################################################################
   # Helpful functions.
   plib  = config.phoebe.lib;
-  funcs = import ./functions.nix { inherit config; };
+  funcs = import ./functions.nix;
   scripts = import ./scripts.nix { inherit lib pkgs; };
+
+  ##############################################################################
+  # Is PostgreSQL local?
+  localpg = config.phoebe.services.postgresql.enable;
 
   ##############################################################################
   # The main Rails service:
@@ -44,8 +48,8 @@ let
 
       after =
         [ "network.target" ] ++
-        optional funcs.localpg  "postgresql.service" ++
-        optional funcs.localpg  "pg-accounts.service" ++
+        optional localpg  "postgresql.service" ++
+        optional localpg  "pg-accounts.service" ++
         optional (!service.isMain) "rails-${app.name}-main" ++
         plib.keyService app.database.passwordFile ++
         plib.keyService app.sourcedFile ++

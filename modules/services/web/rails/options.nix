@@ -4,7 +4,7 @@ with lib;
 
 let
   ##############################################################################
-  functions = import ./functions.nix { inherit config; };
+  functions = import ./functions.nix;
 
   ##############################################################################
   # Database configuration:

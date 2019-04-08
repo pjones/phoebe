@@ -1,5 +1,3 @@
-{ config }:
-
 rec {
 
   ##############################################################################
@@ -13,10 +11,6 @@ rec {
   ##############################################################################
   # Path to where the app is actually installed:
   appLink = app: "${app.home}/package";
-
-  ##############################################################################
-  # Is PostgreSQL local?
-  localpg = config.phoebe.services.postgresql.enable;
 
   ##############################################################################
   # Packages to put in the application's PATH.  FIXME:
