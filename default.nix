@@ -4,7 +4,7 @@
 
 pkgs.stdenvNoCC.mkDerivation rec {
   name = "phoebe-${version}";
-  version = "0.1";
+  version = "0.2";
   src = ./.;
 
   phases =

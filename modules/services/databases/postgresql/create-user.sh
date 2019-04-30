@@ -6,8 +6,6 @@ set -e
 ################################################################################
 option_username=""
 option_password_file=""
-option_database=""
-option_extensions=""
 option_sqlfile="@out@/sql/create-user.sql"
 option_superuser=0
 
@@ -16,8 +14,6 @@ usage () {
 cat <<EOF
 Usage: create-user.sh [options]
 
-  -d NAME Database name to create for USER
-  -e LIST Space-separated list of extensions to enable
   -h      This message
   -p FILE File containing USER's password
   -s FILE The SQL template file (pg-create-user.sql)
@@ -27,14 +23,8 @@ EOF
 }
 
 ################################################################################
-while getopts "d:e:hp:s:Su:" o; do
+while getopts "hp:s:Su:" o; do
   case "${o}" in
-    d) option_database=$OPTARG
-       ;;
-
-    e) option_extensions=$OPTARG
-       ;;
-
     h) usage
        exit
        ;;
@@ -110,25 +100,4 @@ create_user() {
 }
 
 ################################################################################
-create_database() {
-  has_db=$(_psql -tAl | cut -d'|' -f1 | grep -cF "$option_database" || :)
-
-  if [ "$has_db" -eq 0 ]; then
-    @sudo@ -u @superuser@ -H \
-     createdb --owner "$option_username" "$option_database"
-  fi
-}
-
-################################################################################
-enable_extensions() {
-  if [ -n "$option_extensions" ]; then
-    for ext in $option_extensions; do
-      _psql "$option_database" -c "CREATE EXTENSION IF NOT EXISTS $ext"
-    done
-  fi
-}
-
-################################################################################
 create_user
-create_database
-enable_extensions
