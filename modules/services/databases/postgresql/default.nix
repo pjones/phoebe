@@ -218,6 +218,13 @@ let
         owner = find [database.owner];
     in (concatMapStringsSep "\n" (createReadGrant database) ro) +
        (concatMapStringsSep "\n" (createGrant database) rw);
+
+  # Update database and object ownership:
+  updateOwners = database: ''
+    ${scripts}/bin/update-owner.sh \
+      -d "${database.name}" \
+      -o "${database.owner}"
+  '';
 in
 {
   #### Interface
@@ -268,7 +275,8 @@ in
       '' + (concatMapStringsSep "\n" createUser (attrValues cfg.accounts))
          + (lockAccounts (attrValues cfg.accounts))
          + (concatMapStringsSep "\n" createDB (attrValues cfg.databases))
-         + (concatMapStringsSep "\n" createGrants (attrValues cfg.databases));
+         + (concatMapStringsSep "\n" createGrants (attrValues cfg.databases))
+         + (concatMapStringsSep "\n" updateOwners (attrValues cfg.databases));
     };
   };
 }

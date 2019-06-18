@@ -16,6 +16,7 @@ pkgs.stdenvNoCC.mkDerivation {
     substituteAll ${./create-db.sh}    $out/bin/create-db.sh
     substituteAll ${./create-grant.sh} $out/bin/create-grant.sh
     substituteAll ${./nologin.sh}      $out/bin/nologin.sh
+    substituteAll ${./update-owner.sh} $out/bin/update-owner.sh
 
     chmod 555 $out/bin/*.sh
   '';

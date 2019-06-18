@@ -91,6 +91,8 @@ echo_grants() {
   fi
 
   if [ "$option_access" = "w" ] || [ "$option_access" = "rw" ]; then
+    echo "GRANT CREATE ON SCHEMA public TO $option_user;"
+
     echo "GRANT $w_list ON ALL TABLES IN SCHEMA public TO $option_user;"
     echo "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT $w_list ON TABLES TO $option_user;"
 
