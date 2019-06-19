@@ -16,9 +16,17 @@ let
     , ...
     }@args:
       pkgs.stdenv.mkDerivation (args // {
-        buildInputs = [ env env.wrappedRuby ] ++ buildInputs;
-        propagatedBuildInputs = extraPackages ++ propagatedBuildInputs;
-        passthru = { rubyEnv = env; ruby = env.wrappedRuby; };
+        buildInputs = buildInputs;
+
+        propagatedBuildInputs =
+          [ env env.wrappedRuby ]
+          ++ extraPackages
+          ++ propagatedBuildInputs;
+
+        passthru = {
+          rubyEnv = env;
+          ruby = env.wrappedRuby;
+        };
 
         buildPhase = ''
           ${buildPhase}
