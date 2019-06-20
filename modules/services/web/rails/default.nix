@@ -72,7 +72,6 @@ let
       group = "rails-${app.name}";
       shell = "${pkgs.bash}/bin/bash";
       extraGroups = [ config.services.nginx.group ];
-      packages = funcs.appPath app;
     };
     groups."rails-${app.name}" = {};
   };

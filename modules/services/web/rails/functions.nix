@@ -13,11 +13,6 @@ rec {
   appLink = app: "${app.home}/package";
 
   ##############################################################################
-  # Packages to put in the application's PATH.  FIXME:
-  # propagatedBuildInputs won't always be set.
-  appPath = app: [ app.package.rubyEnv ] ++ app.package.propagatedBuildInputs;
-
-  ##############################################################################
   # All of the environment variables that a Rails app needs:
   appEnv = app: {
     HOME = "${app.home}/home";

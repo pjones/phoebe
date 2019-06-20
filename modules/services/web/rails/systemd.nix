@@ -23,9 +23,25 @@ let
     name = "main";
     schedule = null;
     isMain = true;
+    isMigration = false;
 
     script = ''
       puma -e ${app.railsEnv} -p ${toString app.port}
+    '';
+  };
+
+  ##############################################################################
+  # The database migration service:
+  migrationService = app: {
+    name = "migrations";
+    schedule = null;
+    isMain = false;
+    isMigration = true;
+
+    script = ''
+      ${scripts.user}/bin/db-migrate.sh \
+        -r ${funcs.appLink app}/share/${app.name} \
+        -s ${app.home}/state
     '';
   };
 
@@ -34,28 +50,29 @@ let
   appService = app: service: {
     "rails-${app.name}-${service.name}" = {
       description = "${app.name} (Ruby on Rails) ${service.name}";
-      path = funcs.appPath app;
+      path = with pkgs; [ coreutils nix ];
       environment = funcs.appEnv app;
 
       # Only start this service if it isn't scheduled by a timer.
       partOf   = optional (service.schedule == null) "rails-${app.name}.target";
       wantedBy = optional (service.schedule == null) "rails-${app.name}.target";
 
-      wants =
-        plib.keyService app.database.passwordFile ++
-        plib.keyService app.sourcedFile ++
-        app.afterServices;
+      wants = plib.keyService app.database.passwordFile
+        ++ plib.keyService app.sourcedFile
+        ++ app.afterServices
+        ++ optional (!service.isMigration && app.database.migrate) "rails-${app.name}-migrations"
+        ++ optional (!service.isMain && !service.isMigration) "rails-${app.name}-main";
 
-      after =
-        [ "network.target" ] ++
-        optional localpg  "postgresql.service" ++
-        optional localpg  "pg-accounts.service" ++
-        optional (!service.isMain) "rails-${app.name}-main" ++
-        plib.keyService app.database.passwordFile ++
-        plib.keyService app.sourcedFile ++
-        app.afterServices;
+      after = [ "network.target" ]
+        ++ optional localpg  "postgresql.service"
+        ++ optional localpg  "postgres-account-manager.service"
+        ++ plib.keyService app.database.passwordFile
+        ++ plib.keyService app.sourcedFile
+        ++ app.afterServices
+        ++ optional (!service.isMigration && app.database.migrate) "rails-${app.name}-migrations"
+        ++ optional (!service.isMain && !service.isMigration) "rails-${app.name}-main";
 
-      preStart = optionalString service.isMain ''
+      preStart = optionalString (service.isMain || service.isMigration) ''
         # Link the package into the application's home directory:
         if [ ! -e "${funcs.appLink app}" ] || [ "${toString app.deployedExternally}" -ne 1 ]; then
           ln -nfs "${app.package}" "${funcs.appLink app}"
@@ -73,6 +90,7 @@ let
         mkdir -p ${app.home}/home
         ln -nfs ${funcs.appLink app}/share/${app.name} ${app.home}/home/app
         ln -nfs ${plib.attrsToShellExports "rails-${app.name}-env" (funcs.appEnv app)} ${app.home}/home/.env
+        echo 'eval $(${scripts.user}/bin/build-path.sh "${funcs.appLink app}")' > ${app.home}/home/.path
         cp ${./profile.sh} ${app.home}/home/.profile
         chmod 0700 ${app.home}/home/.profile
 
@@ -85,25 +103,19 @@ let
         chown -R rails-${app.name}:rails-${app.name} ${app.home}
         chmod go+rx $(dirname "${app.home}") "${app.home}"
         chmod u+w ${app.home}/db/schema.rb
-
-      '' + optionalString (service.isMain && app.database.migrate) ''
-        # Migrate the database:
-        ${pkgs.sudo}/bin/sudo --user=rails-${app.name} --login \
-          ${scripts.user}/bin/db-migrate.sh \
-            -r ${funcs.appLink app}/share/${app.name} \
-            -s ${app.home}/state
       '';
 
       script = ''
         ${optionalString (app.sourcedFile != null) ". ${app.home}/state/sourcedFile.sh"}
+        eval $(${scripts.user}/bin/build-path.sh "${funcs.appLink app}")
         ${service.script}
       '';
 
       serviceConfig = {
         WorkingDirectory = "-${funcs.appLink app}/share/${app.name}";
-        Restart = "on-failure";
+        Type = if service.isMigration then "oneshot" else "simple";
+        Restart = if service.isMigration then "no" else "on-failure";
         TimeoutSec = "infinity"; # FIXME: what's a reasonable amount of time?
-        Type = "simple";
         PermissionsStartOnly = true;
         User = "rails-${app.name}";
         Group = "rails-${app.name}";
@@ -128,7 +140,9 @@ let
   # systemd services.
   appServices = app:
     foldr (service: set: recursiveUpdate set (appService app service)) {}
-          ( [(mainService app)] ++ attrValues app.services );
+      ( singleton (mainService app)
+        ++ optional app.database.migrate (migrationService app)
+        ++ attrValues app.services );
 
   ##############################################################################
   # Collect all services and turn them into systemd timers:

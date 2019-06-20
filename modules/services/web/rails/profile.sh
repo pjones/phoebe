@@ -1,4 +1,7 @@
 # Rails user shell profile.
+if [ -e "$HOME/.path" ]; then
+   . "$HOME/.path"
+fi
 
 if [ -e "$HOME/.env" ]; then
   . "$HOME/.env"

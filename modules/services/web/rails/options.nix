@@ -86,6 +86,13 @@ let
         default = false;
         description = "Is this the main Rails process?";
       };
+
+      isMigration = mkOption {
+        internal = true;
+        type = types.bool;
+        default = false;
+        description = "Is this the migration service?";
+      };
     };
 
     config = {

@@ -8,6 +8,7 @@
     installPhase = ''
       mkdir -p $out/bin
       substituteAll ${./db-migrate.sh} $out/bin/db-migrate.sh
+      substituteAll ${./build-path.sh} $out/bin/build-path.sh
       find $out/bin -type f -exec chmod 555 '{}' ';'
     '';
 
