@@ -157,6 +157,7 @@ in
       after = [ "influxdb.service" ] ++ keyservices;
       wants = keyservices;
       path = [ config.services.influxdb.package ];
+      serviceConfig.Type = "oneshot";
       script =
         # Configure authentication:
         (optionalString cfg.auth.enable ''

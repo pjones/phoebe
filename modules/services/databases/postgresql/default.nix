@@ -269,6 +269,7 @@ in
       wantedBy = [ "postgresql.service" ];
       after = [ "postgresql.service" ] ++ afterservices;
       wants = afterservices;
+      serviceConfig.Type = "oneshot";
 
       script = ''
         set -e
