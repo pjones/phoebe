@@ -58,8 +58,8 @@ let
   # Create an nginx virtual host for a tunnel account:
   virtualHost = account: tunnel: {
     "${tunnel.subdomain}.${cfg.hostName}" = {
-      forceSSL = true;
-      enableACME = true;
+      forceSSL = config.phoebe.security.enable;
+      enableACME = config.phoebe.security.enable;
       root = "/var/empty";
       locations."/".proxyPass = "http://127.0.0.1:${toString tunnel.serverPort}";
     };
@@ -133,7 +133,7 @@ in
     # Configure a web server to reverse proxy connections to SSH:
     services.nginx = {
       enable = true;
-      recommendedTlsSettings   = true;
+      recommendedTlsSettings   = config.phoebe.security.enable;
       recommendedOptimisation  = true;
       recommendedGzipSettings  = true;
       recommendedProxySettings = true;
