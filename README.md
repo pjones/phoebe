@@ -39,6 +39,10 @@ Module List
 
      Simple backups for PostgreSQL via `pg_dump`.
 
+  * `phoebe.services.networking.wireguard`:
+
+     Simple way to configure a whole network of WireGuard machines.
+
 
 [nixos]: https://nixos.org/
 [nixpkgs]: https://nixos.org/nixpkgs/

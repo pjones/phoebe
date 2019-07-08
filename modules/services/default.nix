@@ -5,6 +5,7 @@
     ./builder
     ./databases
     ./monitoring
+    ./networking
     ./web
   ];
 }
