@@ -45,9 +45,23 @@ let
       };
 
       port = mkOption {
-        type = types.int;
+        type = types.ints.positive;
         default = config.services.postgresql.port;
         description = "Port number for the database server";
+      };
+
+      pool = mkOption {
+        type = types.ints.positive;
+        default = 10;
+        example = 5;
+        description = "Size of connection pool.";
+      };
+
+      timeout = mkOption {
+        type = types.ints.positive;
+        default = 1000;
+        example = 5000;
+        description = "Database timeout in milliseconds.";
       };
     };
   };

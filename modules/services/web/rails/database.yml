@@ -1,8 +1,8 @@
 <%= ENV['RAILS_ENV'] %>:
   adapter: postgresql
   encoding: unicode
-  pool: 5
-  timeout: 5000
+  pool: <%= ENV['DATABASE_POOL_SIZE'] %>
+  timeout: <%= ENV['DATABASE_TIMEOUT'] %>
   host: <%= ENV['DATABASE_HOST'] %>
   port: <%= ENV['DATABASE_PORT'] %>
   database: <%= ENV['DATABASE_NAME'] %>

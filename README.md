@@ -44,6 +44,12 @@ Module List
      Simple way to configure a whole network of WireGuard machines.
 
 
+Running Tests
+-------------
+
+    $ nix-build test
+
+
 [nixos]: https://nixos.org/
 [nixpkgs]: https://nixos.org/nixpkgs/
 [phoebe]: https://en.wikipedia.org/wiki/Phoebe_(moon)

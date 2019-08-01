@@ -1,0 +1,19 @@
+# A bunch of dummy rake tasks:
+
+namespace :db do
+  task :migrate do
+    puts "db:migrate"
+  end
+
+  namespace :schema do
+    task :load do
+      puts "db:schema:load"
+    end
+  end
+end
+
+namespace :assets do
+  task :precompile do
+    puts "assets:precompile"
+  end
+end

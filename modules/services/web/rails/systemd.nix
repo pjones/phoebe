@@ -74,7 +74,7 @@ let
 
       preStart = optionalString (service.isMain || service.isMigration) ''
         # Link the package into the application's home directory:
-        if [ ! -e "${funcs.appLink app}" ] || [ "${toString app.deployedExternally}" -ne 1 ]; then
+        if [ ! -e "${funcs.appLink app}" ] || [ -z "${toString app.deployedExternally}" ]; then
           ln -nfs "${app.package}" "${funcs.appLink app}"
         fi
 
@@ -82,9 +82,9 @@ let
         rm -rf ${app.home}/config
         mkdir -p ${app.home}/{config,log,tmp,db,state}
         cp -rf ${funcs.appLink app}/share/${app.name}/config.dist/* ${app.home}/config/
-        cp ${funcs.appLink app}/share/${app.name}/db/schema.rb.dist ${app.home}/db/schema.rb
-        cp ${./database.yml} ${app.home}/config/database.yml
-        cp ${app.database.passwordFile} ${app.home}/state/database.password
+        cp -f ${funcs.appLink app}/share/${app.name}/db/schema.rb.dist ${app.home}/db/schema.rb
+        cp -f ${./database.yml} ${app.home}/config/database.yml
+        cp -f ${app.database.passwordFile} ${app.home}/state/database.password
 
         # Additional set up for the home directory:
         mkdir -p ${app.home}/home
@@ -96,7 +96,7 @@ let
 
         # Copy the sourcedFile if necessary:
         ${optionalString (app.sourcedFile != null) ''
-          cp ${app.sourcedFile} ${app.home}/state/sourcedFile.sh
+          cp -f ${app.sourcedFile} ${app.home}/state/sourcedFile.sh
         ''}
 
         # Fix permissions:

@@ -21,6 +21,8 @@ rec {
     DATABASE_PORT = toString app.database.port;
     DATABASE_NAME = app.database.name;
     DATABASE_USER = app.database.user;
+    DATABASE_POOL_SIZE = toString app.database.pool;
+    DATABASE_TIMEOUT = toString app.database.timeout;
     DATABASE_PASSWORD_FILE = "${app.home}/state/database.password";
   } // app.environment;
 
