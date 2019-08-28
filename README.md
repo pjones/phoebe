@@ -39,6 +39,12 @@ Module List
 
      Simple backups for PostgreSQL via `pg_dump`.
 
+  * `phoebe.backup.rsync`:
+
+     Sync files from a remote machine creating a set of backups that
+     use hard links for files that don't change from day to day.  This
+     is a simple and efficient way to backup a remote host.
+
   * `phoebe.services.networking.wireguard`:
 
      Simple way to configure a whole network of WireGuard machines.
