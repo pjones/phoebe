@@ -25,6 +25,7 @@ pkgs.nixosTest {
             directory = "/tmp/backup";
             user = "root";
             key = "/tmp/key";
+            services = [ "sshd.service" ];
           }
         ];
       };

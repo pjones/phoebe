@@ -3,13 +3,19 @@
 
 let
   cfg = config.phoebe.backup.rsync;
+  cdir = config.phoebe.backup.directory;
   plib  = config.phoebe.lib;
   user = "backup";
+  port = builtins.head config.services.openssh.ports;
   scripts = (import ../../pkgs/default.nix { inherit pkgs; }).backup-scripts;
 
   ##############################################################################
+  # Sanitize the name of a directory.
+  dir = path: replaceStrings ["/"] ["-"] (removePrefix "/" path);
+
+  ##############################################################################
   # Backup options.
-  backupOpts = {
+  backupOpts = { config, ... }: {
     options = {
       host = mkOption {
         type = types.str;
@@ -19,7 +25,7 @@ let
 
       port = mkOption {
         type = types.ints.positive;
-        default = builtins.head config.services.openssh.ports;
+        default = port;
         example = 22;
         description = "SSH port on the remote machine.";
       };
@@ -36,6 +42,12 @@ let
         default = "/var/backup";
         example = "/var/lib/backup";
         description = "Remote directory to sync to the local machine.";
+      };
+
+      localdir = mkOption {
+        type = types.path;
+        example = "/var/lib/backup/rsync";
+        description = "Local directory where files are synced to.";
       };
 
       key = mkOption {
@@ -69,12 +81,23 @@ let
         example = 14;
         description = "Number of backups to keep when deleting older backups.";
       };
-    };
-  };
 
-  ##############################################################################
-  # Sanitize the name of a directory.
-  dir = path: replaceStrings ["/"] ["-"] (removePrefix "/" path);
+      services = mkOption {
+        type = types.listOf types.str;
+        default = [ ];
+        example = [ "foo.service" ];
+        description = ''
+          Extra services to require and wait for.  Useful if you want
+          to require certain systemd mounts to exist.
+        '';
+      };
+    };
+
+    config = {
+      localdir =
+        mkDefault "${cdir}/rsync/${config.host}/${dir config.directory}";
+      };
+  };
 
   ##############################################################################
   # Generate a service/timer name (without the suffix):
@@ -83,12 +106,10 @@ let
   ##############################################################################
   # Generate a systemd service for a backup.
   service = opts:
-    let base = "${config.phoebe.backup.directory}/rsync";
-        localdir = "${base}/${opts.host}/${dir opts.directory}";
-    in rec {
+    rec {
       description = "rsync backup for ${opts.host}:${opts.directory}";
       path  = [ pkgs.coreutils scripts ];
-      wants = plib.keyService opts.key;
+      wants = plib.keyService opts.key ++ opts.services;
       after = wants;
 
       serviceConfig = {
@@ -98,9 +119,9 @@ let
       };
 
       preStart = ''
-        mkdir -p "${localdir}"
-        chown -R ${cfg.user}:${cfg.group} "${localdir}"
-        chmod -R 0700 "${localdir}"
+        mkdir -p "${opts.localdir}"
+        chown -R ${cfg.user}:${cfg.group} "${opts.localdir}"
+        chmod -R 0700 "${opts.localdir}"
       '';
 
       script = ''
@@ -109,8 +130,8 @@ let
         export BACKUP_SSH_KEY=${toString opts.key}
         export BACKUP_SSH_PORT=${toString opts.port}
         . "${scripts}/lib/backup.sh"
-        backup_via_rsync "${opts.user}@${opts.host}:${opts.directory}" "${localdir}"
-        backup-purge.sh -k "${toString opts.keep}" -d "${localdir}"
+        backup_via_rsync "${opts.user}@${opts.host}:${opts.directory}" "${opts.localdir}"
+        backup-purge.sh -k "${toString opts.keep}" -d "${opts.localdir}"
       '';
     };
 
