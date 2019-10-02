@@ -8,6 +8,7 @@ in
   imports = [
     ./postgresql.nix
     ./rsync.nix
+    ./script.nix
   ];
 
   #### Interface
