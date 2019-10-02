@@ -52,6 +52,16 @@ let
           available.
         '';
       };
+
+      services = mkOption {
+        type = types.listOf types.str;
+        default = [ ];
+        example = [ "foo.service" ];
+        description = ''
+          Extra services to require and wait for.  Useful if you want
+          to require certain systemd mounts to exist.
+        '';
+      };
     };
 
     config = {
@@ -64,7 +74,7 @@ let
   service = opts: rec {
     description = "${opts.name} backup";
     path  = [ pkgs.coreutils ] ++ opts.path;
-    wants = plib.keyService opts.key;
+    wants = plib.keyService opts.key ++ opts.services;
     after = wants;
     script = opts.script;
     serviceConfig.Type = "simple";
