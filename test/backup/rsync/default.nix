@@ -20,6 +20,7 @@ pkgs.nixosTest {
 
       phoebe.backup.rsync = {
         enable = true;
+        user = "root";
         schedules = [
           { host = "localhost";
             directory = "/tmp/backup";

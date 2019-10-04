@@ -5,7 +5,6 @@ let
   cfg = config.phoebe.backup.rsync;
   cdir = config.phoebe.backup.directory;
   plib  = config.phoebe.lib;
-  user = "backup";
   port = builtins.head config.services.openssh.ports;
   scripts = (import ../../pkgs/default.nix { inherit pkgs; }).backup-scripts;
 
@@ -157,7 +156,7 @@ in
 
     user = mkOption {
       type = types.str;
-      default = user;
+      default = config.phoebe.backup.user.name;
       description = "User to perform backups as.";
     };
 
@@ -176,7 +175,12 @@ in
 
   #### Implementation
   config = mkIf cfg.enable {
-    phoebe.backup.user.enable = cfg.user == user;
+    # Create user/group if necessary:
+    phoebe.backup.user.enable =
+      let user  = config.phoebe.backup.user.name;
+          group = config.phoebe.backup.user.group;
+      in cfg.user == user || cfg.group == group;
+
     systemd.services = toSystemd service;
     systemd.timers   = toSystemd timer;
   };
