@@ -119,8 +119,8 @@ let
 
       preStart = ''
         mkdir -p "${opts.localdir}"
-        chown -R ${cfg.user}:${cfg.group} "${opts.localdir}"
-        chmod -R 0700 "${opts.localdir}"
+        chown ${cfg.user}:${cfg.group} "${opts.localdir}"
+        chmod 0700 "${opts.localdir}"
       '';
 
       script = ''
