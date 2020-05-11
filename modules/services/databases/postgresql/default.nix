@@ -6,10 +6,10 @@ with lib;
 
 let
   cfg = config.phoebe.services.postgresql;
-  plib = config.phoebe.lib;
+  plib = pkgs.phoebe.lib;
   superuser = config.services.postgresql.superUser;
   scripts = import ./scripts.nix { inherit config lib pkgs; };
-  afterservices = concatMap (a: plib.keyService a.passwordFile) (attrValues cfg.accounts);
+  afterservices = concatMap (a: plib.keys.keyService a.passwordFile) (attrValues cfg.accounts);
 
   # Per-database options:
   database = { name, ...}: {

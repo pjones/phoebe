@@ -5,7 +5,7 @@ with lib;
 
 let
   cfg = config.phoebe.services.influxdb;
-  plib = config.phoebe.lib;
+  plib = pkgs.phoebe.lib;
   scripts = import ./scripts.nix { inherit config lib pkgs; };
   usernameRe = "^[a-zA-Z0-9_-]+$";
 
@@ -110,8 +110,8 @@ let
   ##############################################################################
   # A list of services that need to be waited on for keys:
   keyservices =
-    optionals cfg.auth.enable (plib.keyService cfg.superuser.passwordFile) ++
-    concatMap (a: plib.keyService a.passwordFile) (attrValues cfg.accounts);
+    optionals cfg.auth.enable (plib.keys.keyService cfg.superuser.passwordFile) ++
+    concatMap (a: plib.keys.keyService a.passwordFile) (attrValues cfg.accounts);
 
 in
 {

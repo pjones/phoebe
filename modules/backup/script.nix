@@ -3,7 +3,7 @@
 
 let
   cfg = config.phoebe.backup;
-  plib  = config.phoebe.lib;
+  plib  = pkgs.phoebe.lib;
 
   ##############################################################################
   scriptOpts = { name, ... }: {
@@ -74,7 +74,7 @@ let
   service = opts: rec {
     description = "${opts.name} backup";
     path  = [ pkgs.coreutils ] ++ opts.path;
-    wants = plib.keyService opts.key ++ opts.services;
+    wants = plib.keys.keyService opts.key ++ opts.services;
     after = wants;
     script = opts.script;
     serviceConfig.Type = "simple";

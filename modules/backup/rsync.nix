@@ -4,7 +4,7 @@
 let
   cfg = config.phoebe.backup.rsync;
   cdir = config.phoebe.backup.directory;
-  plib  = config.phoebe.lib;
+  plib  = pkgs.phoebe.lib;
   port = builtins.head config.services.openssh.ports;
   scripts = (import ../../pkgs/default.nix { inherit pkgs; }).backup-scripts;
 
@@ -108,7 +108,7 @@ let
     rec {
       description = "rsync backup for ${opts.host}:${opts.directory}";
       path  = [ pkgs.coreutils scripts ];
-      wants = plib.keyService opts.key ++ opts.services;
+      wants = plib.keys.keyService opts.key ++ opts.services;
       after = wants;
 
       serviceConfig = {

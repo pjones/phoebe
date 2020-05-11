@@ -32,12 +32,32 @@ let
 
        Example:
          keyService "/run/keys/foo"
-         => ["foo.service"]
+         => ["foo-key.service"]
          keyService "/etc/passwd"
          => []
     */
     keyService = path: optional (isKeyFile path) (mkServiceName path);
 
+    /* Alter the given service to wait for a keys service if
+       necessary.
+
+       Example:
+         updateService: "foo" "/run/keys/bar"
+         => {
+               "foo" = {
+                 after = ["bar-key.service"];
+                 wants = ["bar-key.service"];
+               };
+            }
+
+    */
+    updateService = service: path:
+      optionalAttrs (isKeyFile path) {
+        "${service}" = {
+          after = keyService path;
+          wants = keyService path;
+        };
+      };
   };
 
 in funcs

@@ -7,7 +7,7 @@ let
   cfg = config.phoebe.services.networking.wireguard;
 
   # Private library functions:
-  plib = config.phoebe.lib;
+  plib = pkgs.phoebe.lib;
 
   ##############################################################################
   # Per-machine options:
@@ -159,13 +159,8 @@ let
   };
 
   # Make wireguard wait for its private key.
-  mkWait = nw: {
-    "wireguard-${nw.name}" =
-      mkIf (plib.isKeyFile nw.privateKey) {
-        after = plib.keyService nw.privateKey;
-        wants = plib.keyService nw.privateKey;
-      };
-  };
+  mkWait = nw: plib.keys.updateService
+    "wireguard-${nw.name}" nw.privateKey;
 in
 {
   #### Interface:

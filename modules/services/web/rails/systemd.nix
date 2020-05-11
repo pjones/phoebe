@@ -9,7 +9,7 @@ let
 
   ##############################################################################
   # Helpful functions.
-  plib  = config.phoebe.lib;
+  plib  = pkgs.phoebe.lib;
   funcs = import ./functions.nix;
   scripts = import ./scripts.nix { inherit lib pkgs; };
 
@@ -57,8 +57,8 @@ let
       partOf   = optional (service.schedule == null) "rails-${app.name}.target";
       wantedBy = optional (service.schedule == null) "rails-${app.name}.target";
 
-      wants = plib.keyService app.database.passwordFile
-        ++ plib.keyService app.sourcedFile
+      wants = plib.keys.keyService app.database.passwordFile
+        ++ plib.keys.keyService app.sourcedFile
         ++ app.afterServices
         ++ optional (!service.isMigration && app.database.migrate) "rails-${app.name}-migrations"
         ++ optional (!service.isMain && !service.isMigration) "rails-${app.name}-main";
@@ -66,8 +66,8 @@ let
       after = [ "network.target" ]
         ++ optional localpg  "postgresql.service"
         ++ optional localpg  "postgres-account-manager.service"
-        ++ plib.keyService app.database.passwordFile
-        ++ plib.keyService app.sourcedFile
+        ++ plib.keys.keyService app.database.passwordFile
+        ++ plib.keys.keyService app.sourcedFile
         ++ app.afterServices
         ++ optional (!service.isMigration && app.database.migrate) "rails-${app.name}-migrations"
         ++ optional (!service.isMain && !service.isMigration) "rails-${app.name}-main";
@@ -89,7 +89,7 @@ let
         # Additional set up for the home directory:
         mkdir -p ${app.home}/home
         ln -nfs ${funcs.appLink app}/share/${app.name} ${app.home}/home/app
-        ln -nfs ${plib.attrsToShellExports "rails-${app.name}-env" (funcs.appEnv app)} ${app.home}/home/.env
+        ln -nfs ${plib.shell.attrsToShellExports "rails-${app.name}-env" (funcs.appEnv app)} ${app.home}/home/.env
         echo 'eval $(${scripts.user}/bin/build-path.sh "${funcs.appLink app}")' > ${app.home}/home/.path
         cp ${./profile.sh} ${app.home}/home/.profile
         chmod 0700 ${app.home}/home/.profile
