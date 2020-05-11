@@ -158,9 +158,6 @@ let
     };
   };
 
-  # Make wireguard wait for its private key.
-  mkWait = nw: plib.keys.updateService
-    "wireguard-${nw.name}" nw.privateKey;
 in
 {
   #### Interface:
@@ -193,7 +190,10 @@ in
       foldr (a: b: mkNetwork a // b) { } (attrValues cfg.networks);
 
     # Extra systemd service configuration:
-    systemd.services =
-      foldr (a: b: mkWait a // b) { } (attrValues cfg.networks);
+    phoebe.helpers.waitForKeys = builtins.listToAttrs
+      (map (nw: {
+        name = "wireguard-${nw.name}";
+        value = nw.privateKey;
+      }) (attrValues cfg.networks));
   };
 }

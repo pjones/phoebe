@@ -3,6 +3,7 @@
 {
   imports = [
     ./backup
+    ./helpers
     ./security
     ./services
   ];
