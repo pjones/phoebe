@@ -21,9 +21,9 @@ pkgs.nixosTest {
 
 
   testScript = ''
-    $simple->start;
-    $simple->waitForUnit("rails-app-main.service");
-    $simple->succeed("railsdo app rake -T");
-    $simple->succeed("test -L /var/lib/rails/app/package");
+    start_all()
+    simple.wait_for_unit("rails-app-main.service")
+    simple.succeed("railsdo app rake -T")
+    simple.succeed("test -L /var/lib/rails/app/package")
   '';
 }

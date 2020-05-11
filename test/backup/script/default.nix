@@ -21,9 +21,12 @@ pkgs.nixosTest {
   };
 
   testScript = ''
-    $simple->start;
-    $simple->systemctl("start ${service}");
-    $simple->waitUntilFails("systemctl status ${service} | grep -q 'Active: active'");
-    $simple->succeed("cat /tmp/issue") =~ /NixOS/ or die;
+    simple.start
+    simple.systemctl("start ${service}")
+    simple.wait_until_fails(
+        "systemctl status ${service} | grep -q 'Active: active'"
+    )
+    if not "NixOS" in simple.succeed("cat /tmp/issue"):
+        raise Exception("script failed to copy file")
   '';
 }

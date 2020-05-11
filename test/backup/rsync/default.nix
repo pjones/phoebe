@@ -34,16 +34,21 @@ pkgs.nixosTest {
   };
 
   testScript = ''
-    $simple->start;
-    $simple->copyFileFromHost("${../../data/ssh.id_ed25519}", "/tmp/key");
-    $simple->succeed("chmod 0600 /tmp/key");
-    $simple->succeed("chown backup:backup /tmp/key");
-    $simple->succeed("mkdir /tmp/backup");
-    $simple->succeed("echo OKAY > /tmp/backup/file");
-    $simple->waitForUnit("sshd.service");
-    $simple->systemctl("start ${service}");
-    $simple->waitForUnit("${service}");
-    $simple->waitUntilFails("systemctl status ${service} | grep -q 'Active: active'");
-    $simple->succeed("cat /var/backup/rsync/localhost/tmp-backup/*/file") =~ /OKAY/ or die;
+    start_all()
+    simple.copy_from_host(
+        "${../../data/ssh.id_ed25519}", "/tmp/key"
+    )
+    simple.succeed("chmod 0600 /tmp/key")
+    simple.succeed("chown backup:backup /tmp/key")
+    simple.succeed("mkdir /tmp/backup")
+    simple.succeed("echo OKAY > /tmp/backup/file")
+    simple.wait_for_unit("sshd.service")
+    simple.systemctl("start ${service}")
+    simple.wait_for_unit("${service}")
+    simple.wait_until_fails(
+        "systemctl status ${service} | grep -q 'Active: active'"
+    )
+    if not "OKAY" in simple.succeed("cat /var/backup/rsync/localhost/tmp-backup/*/file"):
+        raise Exception("rsync failed")
   '';
 }
