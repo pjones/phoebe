@@ -69,7 +69,7 @@ set -x
 
 ################################################################################
 # FIXME: Calculate this URL at run time:
-NIXOS_URL="https://d3g5gsiof5omrk.cloudfront.net/nixos/18.09/nixos-18.09.1834.9d608a6f592/nixos-minimal-18.09.1834.9d608a6f592-x86_64-linux.iso"
+NIXOS_URL="https://channels.nixos.org/nixos-20.09/latest-nixos-minimal-x86_64-linux.iso"
 
 ################################################################################
 # Label the disks so the rest of the script only uses labels.
