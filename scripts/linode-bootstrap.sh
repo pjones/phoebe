@@ -139,6 +139,7 @@ enable_ssh() {
   services.openssh.enable = true;
   services.openssh.permitRootLogin = "yes";
   services.openssh.openFirewall = true;
+  networking.interfaces.enp0s5.preferTempAddress = false;
 }
 EOF
 }
