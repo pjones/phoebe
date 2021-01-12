@@ -82,7 +82,7 @@ label_disks() {
 ################################################################################
 # Download the NixOS ISO and write it to the installer disk.
 write_installer_to_disk() {
-  curl -k "$NIXOS_URL" \
+  curl -L -k "$NIXOS_URL" \
     | dd bs=1M of=/dev/disk/by-label/installer
 
   sync
